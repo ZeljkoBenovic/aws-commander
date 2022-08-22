@@ -1,4 +1,4 @@
-module github.com/ZeljkoBenovic/aws-commander
+module github.com/Trapesys/aws-commander
 
 go 1.17
 

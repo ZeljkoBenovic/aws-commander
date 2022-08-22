@@ -1,7 +1,7 @@
 package ports
 
 import (
-	"github.com/ZeljkoBenovic/aws-commander/framework/adapters/types/ssm"
+	"github.com/Trapesys/aws-commander/framework/adapters/types/ssm"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/hashicorp/go-hclog"
 )

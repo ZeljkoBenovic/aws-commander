@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"flag"
-	"github.com/ZeljkoBenovic/aws-commander/framework/adapters/types/cmd"
-	"github.com/ZeljkoBenovic/aws-commander/framework/ports"
+	"github.com/Trapesys/aws-commander/framework/adapters/types/cmd"
+	"github.com/Trapesys/aws-commander/framework/ports"
 	"github.com/hashicorp/go-hclog"
 	"os"
 	"strings"

@@ -1,7 +1,7 @@
 package ports
 
 import (
-	"github.com/ZeljkoBenovic/aws-commander/framework/adapters/types/cmd"
+	"github.com/Trapesys/aws-commander/framework/adapters/types/cmd"
 	"github.com/hashicorp/go-hclog"
 )
 

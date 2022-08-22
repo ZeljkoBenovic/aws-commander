@@ -2,9 +2,9 @@ package app
 
 import (
 	"fmt"
-	"github.com/ZeljkoBenovic/aws-commander/framework/adapters/types/cmd"
-	fports "github.com/ZeljkoBenovic/aws-commander/framework/ports"
-	"github.com/ZeljkoBenovic/aws-commander/internal/ports"
+	"github.com/Trapesys/aws-commander/framework/adapters/types/cmd"
+	fports "github.com/Trapesys/aws-commander/framework/ports"
+	"github.com/Trapesys/aws-commander/internal/ports"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"

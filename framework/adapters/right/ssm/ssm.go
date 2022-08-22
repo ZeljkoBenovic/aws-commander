@@ -2,8 +2,8 @@ package ssm
 
 import (
 	"fmt"
-	ssm2 "github.com/ZeljkoBenovic/aws-commander/framework/adapters/types/ssm"
-	"github.com/ZeljkoBenovic/aws-commander/framework/ports"
+	ssm2 "github.com/Trapesys/aws-commander/framework/adapters/types/ssm"
+	"github.com/Trapesys/aws-commander/framework/ports"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"

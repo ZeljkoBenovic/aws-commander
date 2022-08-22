@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/ZeljkoBenovic/aws-commander/internal/ports"
+	"github.com/Trapesys/aws-commander/internal/ports"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/hashicorp/go-hclog"
 )
