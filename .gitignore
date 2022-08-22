@@ -1,3 +1,4 @@
 .idea
 scripts
 cmd-out.txt
+dist/
