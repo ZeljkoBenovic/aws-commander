@@ -10,6 +10,9 @@ type ISSMPort interface {
 	// RunCommand runs the commands
 	RunCommand() ssm.Instances
 
+	// WithMode sets the mode to run command. This defines if Ansible or Bash script will be run.
+	WithMode(mode string)
+
 	// GetCommandOutput outputs the command result
 	GetCommandOutput(commandID, instanceID *string) (string, string)
 
@@ -24,6 +27,9 @@ type ISSMPort interface {
 	// WithFreeFormCommand takes in a single bash command to be executed
 	WithFreeFormCommand(cmd string) ISSMPort
 
+	// WithAnsiblePlaybook takes in the location of Ansible playbook
+	WithAnsiblePlaybook(opts *AnsiblePlaybookOpts) ISSMPort
+
 	// WithInstances builder sets the instance IDs to run the command on
 	//
 	// Can be omitted if WithInstanceTags is set
@@ -36,4 +42,11 @@ type ISSMPort interface {
 
 	// WithAWSSession builder builds the SSM adapter with AWS session
 	WithAWSSession(awsSession *session.Session) ISSMPort
+}
+
+type AnsiblePlaybookOpts struct {
+	Playbook    string
+	PlaybookURL string
+	ExtraVars   string
+	Check       string
 }

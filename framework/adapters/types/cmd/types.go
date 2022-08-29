@@ -8,4 +8,11 @@ type Flags struct {
 	OutputLocation     *string
 	FreeFormCmd        *string
 	AwsProfile         *string
+	Mode               *string
+	AnsiblePlaybook    *string
+	AnsibleDryRun      *bool
+}
+
+type FlagDefaults struct {
+	Mode string
 }

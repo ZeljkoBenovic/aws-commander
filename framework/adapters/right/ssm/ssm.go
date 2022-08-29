@@ -5,6 +5,7 @@ import (
 	ssm2 "github.com/Trapesys/aws-commander/framework/adapters/types/ssm"
 	"github.com/Trapesys/aws-commander/framework/ports"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
@@ -15,10 +16,12 @@ import (
 
 // Adapter is the adapter for SSM port
 type Adapter struct {
-	ssmSession  *ssm.SSM
-	logger      hclog.Logger
-	instanceIDs []*string
-	targets     []*ssm.Target
+	ssmSession          *ssm.SSM
+	logger              hclog.Logger
+	instanceIDs         []*string
+	targets             []*ssm.Target
+	mode                commandType
+	ansiblePlaybookOpts *ports.AnsiblePlaybookOpts
 
 	commands
 }
@@ -86,38 +89,20 @@ func (a *Adapter) WithInstanceTags(tagName string, tagValues []string) ports.ISS
 func (a *Adapter) RunCommand() ssm2.Instances {
 	var command *ssm.SendCommandInput
 
-	responceData := ssm2.Instances{}
-	// Prepare command
-	if a.instanceIDs != nil {
-		command = &ssm.SendCommandInput{
-			DocumentName:    aws.String("AWS-RunShellScript"),
-			DocumentVersion: aws.String("$LATEST"),
-			InstanceIds:     a.instanceIDs,
-			Parameters:      a.commands,
-			TimeoutSeconds:  aws.Int64(300),
-		}
+	responseData := ssm2.Instances{}
+	prepareCommandFunc := a.prepareCommand()
 
-		a.logger.Debug("commands set", "commands", fmt.Sprintf("%+v\n", a.instanceIDs))
-	} else if a.targets != nil {
-		command = &ssm.SendCommandInput{
-			DocumentName:    aws.String("AWS-RunShellScript"),
-			DocumentVersion: aws.String("$LATEST"),
-			Targets:         a.targets,
-			Parameters:      a.commands,
-			TimeoutSeconds:  aws.Int64(300),
-		}
-		a.logger.Debug("targets set", "targets", fmt.Sprintf("%+v\n", a.targets))
-	} else {
+	if command = prepareCommandFunc[a.mode](); command == nil {
 		a.logger.Error("could not find instance or tag to run the commands on")
 
-		return responceData
+		return responseData
 	}
 	// Send Command
 	out, err := a.ssmSession.SendCommand(command)
 	if err != nil {
 		a.logger.Error("could not run SSM command", "err", err.Error())
 
-		return responceData
+		return responseData
 	}
 
 	a.logger.Debug("send command call response", "response", out.String())
@@ -138,16 +123,24 @@ func (a *Adapter) RunCommand() ssm2.Instances {
 				waiter.MaxAttempts = 60
 			},
 		); cmdTimeoutErr != nil {
-			a.logger.Error(
-				"timeout reached while waiting for command to finish",
-				"instanceID", instance,
-				"commandID", out.Command.CommandId,
-			)
-
-			return responceData
+			//nolint
+			if awsErr, ok := cmdTimeoutErr.(awserr.Error); ok {
+				if awsErr.Code() == request.WaiterResourceNotReadyErrorCode {
+					a.logger.Error(
+						"error running ansible playbook",
+						"instanceID", *instance,
+						"commandID", *out.Command.CommandId,
+					)
+				} else if awsErr.Code() == request.ErrCodeResponseTimeout {
+					a.logger.Error(
+						"timeout reached while waiting for command to finish",
+						"instanceID", *instance,
+						"commandID", *out.Command.CommandId,
+					)
+				}
+			}
 		}
 	}
-
 	// and parse and return output data
 	for _, instanceID := range out.Command.InstanceIds {
 		var output, errorOutput string
@@ -158,10 +151,10 @@ func (a *Adapter) RunCommand() ssm2.Instances {
 			ErrorOutput:   errorOutput,
 		}
 
-		responceData.Instance = append(responceData.Instance, inst)
+		responseData.Instance = append(responseData.Instance, inst)
 	}
 
-	return responceData
+	return responseData
 }
 
 func (a *Adapter) GetCommandOutput(cmdID, instanceID *string) (string, string) {
@@ -195,6 +188,21 @@ func (a *Adapter) WithFreeFormCommand(cmd string) ports.ISSMPort {
 	shell := "#!/bin/bash"
 	a.commands["commands"] = append(a.commands["commands"], &shell)
 	a.commands["commands"] = append(a.commands["commands"], &cmd)
+
+	return a
+}
+
+func (a *Adapter) WithMode(mode string) {
+	a.mode = commandType(mode)
+}
+
+func (a *Adapter) WithAnsiblePlaybook(opts *ports.AnsiblePlaybookOpts) ports.ISSMPort {
+	a.ansiblePlaybookOpts = opts
+
+	a.commands["playbook"] = []*string{&opts.Playbook}
+	a.commands["playbookurl"] = []*string{&opts.PlaybookURL}
+	a.commands["extravars"] = []*string{&opts.ExtraVars}
+	a.commands["check"] = []*string{&opts.Check}
 
 	return a
 }

@@ -66,10 +66,15 @@ func (a *Adapter) Init() ports.IApp {
 	// init ssm session
 	a.ssmAdapter.WithAWSSession(a.coreAdapter.GetAWSSession()).WithLogger(a.baseLogger)
 
+	// MODE //
+	// init command mode ( bash or ansible )
+	a.ssmAdapter.WithMode(*a.flags.Mode)
+
 	// init ssm instances
 	a.ssmAdapter.WithInstances(a.flags.InstanceIDs)
+
 	//init ssm commands
-	if *a.flags.BashScriptLocation != "" {
+	if *a.flags.Mode == "bash" && *a.flags.BashScriptLocation != "" {
 		a.ssmAdapter.WithCommands(
 			a.localFSAdapter.
 				WithLogger(a.baseLogger).
@@ -78,6 +83,21 @@ func (a *Adapter) Init() ports.IApp {
 	} else if *a.flags.FreeFormCmd != "" {
 		a.baseLogger.Debug("freeform command found", "cmd", *a.flags.FreeFormCmd)
 		a.ssmAdapter.WithFreeFormCommand(*a.flags.FreeFormCmd)
+	} else if *a.flags.Mode == "ansible" {
+		a.baseLogger.Debug("mode set to Ansible")
+
+		// TODO: implement PlaybookURL and ExtraVars
+		isDryRun := "False"
+		if *a.flags.AnsibleDryRun {
+			isDryRun = "True"
+		}
+
+		a.ssmAdapter.WithAnsiblePlaybook(&fports.AnsiblePlaybookOpts{
+			Playbook:    a.localFSAdapter.ReadAnsiblePlaybook(*a.flags.AnsiblePlaybook),
+			PlaybookURL: "",
+			ExtraVars:   "",
+			Check:       isDryRun,
+		})
 	} else {
 		a.baseLogger.Error("could not find a command to execute, " +
 			"script location or cmd flag must be defined")
