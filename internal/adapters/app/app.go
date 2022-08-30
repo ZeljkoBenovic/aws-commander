@@ -35,18 +35,18 @@ func (a Adapter) getAWSOptions() session.Options {
 					os.Getenv("AWS_SECRET_ACCESS_KEY"),
 					os.Getenv("AWS_SESSION_TOKEN"),
 				),
-				Region: a.flags.AwsZone,
+				Region: a.flags.AwsZone.ValueString,
 			},
 		}
 	}
 
-	a.baseLogger.Info("reading aws credentials from", "profile", *a.flags.AwsProfile)
+	a.baseLogger.Info("reading aws credentials from", "profile", *a.flags.AwsProfile.ValueString)
 	// otherwise, use profile from aws credential file
 	return session.Options{
 		Config: aws.Config{
-			Region: a.flags.AwsZone,
+			Region: a.flags.AwsZone.ValueString,
 		},
-		Profile: *a.flags.AwsProfile,
+		Profile: *a.flags.AwsProfile.ValueString,
 	}
 }
 
@@ -55,7 +55,7 @@ func (a *Adapter) Init() ports.IApp {
 	a.flags = a.cmdAdapter.WithLogger(a.baseLogger).GetFlags()
 	//////////
 	// set log level
-	a.baseLogger.SetLevel(hclog.LevelFromString(*a.flags.LogLevel))
+	a.baseLogger.SetLevel(hclog.LevelFromString(*a.flags.LogLevel.ValueString))
 
 	// CORE //
 	// init core
@@ -68,32 +68,32 @@ func (a *Adapter) Init() ports.IApp {
 
 	// MODE //
 	// init command mode ( bash or ansible )
-	a.ssmAdapter.WithMode(*a.flags.Mode)
+	a.ssmAdapter.WithMode(*a.flags.Mode.ValueString)
 
 	// init ssm instances
-	a.ssmAdapter.WithInstances(a.flags.InstanceIDs)
+	a.ssmAdapter.WithInstances(a.flags.InstanceIDs.ValueStringArr)
 
 	//init ssm commands
-	if *a.flags.Mode == "bash" && *a.flags.BashScriptLocation != "" {
+	if *a.flags.Mode.ValueString == "bash" && *a.flags.BashScriptLocation.ValueString != "" {
 		a.ssmAdapter.WithCommands(
 			a.localFSAdapter.
 				WithLogger(a.baseLogger).
-				ReadBashScript(*a.flags.BashScriptLocation),
+				ReadBashScript(*a.flags.BashScriptLocation.ValueString),
 		)
-	} else if *a.flags.FreeFormCmd != "" {
-		a.baseLogger.Debug("freeform command found", "cmd", *a.flags.FreeFormCmd)
-		a.ssmAdapter.WithFreeFormCommand(*a.flags.FreeFormCmd)
-	} else if *a.flags.Mode == "ansible" {
+	} else if *a.flags.FreeFormCmd.ValueString != "" {
+		a.baseLogger.Debug("freeform command found", "cmd", *a.flags.FreeFormCmd.ValueString)
+		a.ssmAdapter.WithFreeFormCommand(*a.flags.FreeFormCmd.ValueString)
+	} else if *a.flags.Mode.ValueString == "ansible" {
 		a.baseLogger.Debug("mode set to Ansible")
 
 		// TODO: implement PlaybookURL and ExtraVars
 		isDryRun := "False"
-		if *a.flags.AnsibleDryRun {
+		if *a.flags.AnsibleDryRun.ValueBool {
 			isDryRun = "True"
 		}
 
 		a.ssmAdapter.WithAnsiblePlaybook(&fports.AnsiblePlaybookOpts{
-			Playbook:    a.localFSAdapter.ReadAnsiblePlaybook(*a.flags.AnsiblePlaybook),
+			Playbook:    a.localFSAdapter.ReadAnsiblePlaybook(*a.flags.AnsiblePlaybook.ValueString),
 			PlaybookURL: "",
 			ExtraVars:   "",
 			Check:       isDryRun,
@@ -129,12 +129,12 @@ func (a *Adapter) WithLogger(logger hclog.Logger) ports.IApp {
 
 func (a Adapter) RunCommand() error {
 	cmdResult := a.ssmAdapter.RunCommand()
-	if *a.flags.OutputLocation != "" {
-		if err := a.localFSAdapter.WriteRunCommandOutput(cmdResult, *a.flags.OutputLocation); err != nil {
+	if *a.flags.OutputLocation.ValueString != "" {
+		if err := a.localFSAdapter.WriteRunCommandOutput(cmdResult, *a.flags.OutputLocation.ValueString); err != nil {
 			return fmt.Errorf("could not write command result to file: %w", err)
 		}
 
-		a.baseLogger.Info("command output written to file", "filename", *a.flags.OutputLocation)
+		a.baseLogger.Info("command output written to file", "filename", *a.flags.OutputLocation.ValueString)
 		os.Exit(0)
 	}
 
