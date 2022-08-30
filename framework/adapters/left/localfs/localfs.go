@@ -33,6 +33,17 @@ func (a Adapter) ReadBashScript(bashScriptLocation string) string {
 	return string(fileBytes)
 }
 
+func (a Adapter) ReadAnsiblePlaybook(playbookLocation string) string {
+	// TODO: check if is yaml or yml file
+	fileBytes, err := os.ReadFile(playbookLocation)
+	if err != nil {
+		a.logger.Error("could not read file", "file", playbookLocation, "err", err.Error())
+		os.Exit(1)
+	}
+
+	return string(fileBytes)
+}
+
 func (a Adapter) WriteRunCommandOutput(cmdOutput ssm.Instances, outputLocation string) error {
 	jsonBuff, err := json.MarshalIndent(cmdOutput, "", "    ")
 	if err != nil {
