@@ -1,13 +1,14 @@
 package main
 
 import (
+	"os"
+
 	"github.com/Trapesys/aws-commander/framework/adapters/left/cmd"
 	"github.com/Trapesys/aws-commander/framework/adapters/left/localfs"
 	"github.com/Trapesys/aws-commander/framework/adapters/right/ssm"
 	"github.com/Trapesys/aws-commander/internal/adapters/app"
 	"github.com/Trapesys/aws-commander/internal/adapters/core"
 	"github.com/hashicorp/go-hclog"
-	"os"
 )
 
 func main() {

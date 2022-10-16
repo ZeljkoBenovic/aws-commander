@@ -2,6 +2,9 @@ package ssm
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	ssm2 "github.com/Trapesys/aws-commander/framework/adapters/types/ssm"
 	"github.com/Trapesys/aws-commander/framework/ports"
 	"github.com/aws/aws-sdk-go/aws"
@@ -10,8 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/hashicorp/go-hclog"
-	"strings"
-	"time"
 )
 
 // Adapter is the adapter for SSM port
@@ -80,9 +81,7 @@ func (a *Adapter) WithInstanceTags(tagName string, tagValues []string) ports.ISS
 
 	a.logger.Debug("target tags set", "target", fmt.Sprintf("%+v\n", a.targets))
 
-	// TODO: remove panic once resolved
-	panic("this feature does not work properly at this moment")
-	//nolint
+	// TODO: this feature does not work properly at this moment
 	return a
 }
 

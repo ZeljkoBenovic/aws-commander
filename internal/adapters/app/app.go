@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/Trapesys/aws-commander/framework/adapters/types/cmd"
 	fports "github.com/Trapesys/aws-commander/framework/ports"
 	"github.com/Trapesys/aws-commander/internal/ports"
@@ -9,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/hashicorp/go-hclog"
-	"os"
 )
 
 type Adapter struct {
@@ -73,17 +74,32 @@ func (a *Adapter) Init() ports.IApp {
 	// init ssm instances
 	a.ssmAdapter.WithInstances(a.flags.InstanceIDs.ValueStringArr)
 
-	//init ssm commands
-	if *a.flags.Mode.ValueString == "bash" && *a.flags.BashScriptLocation.ValueString != "" {
-		a.ssmAdapter.WithCommands(
-			a.localFSAdapter.
-				WithLogger(a.baseLogger).
-				ReadBashScript(*a.flags.BashScriptLocation.ValueString),
-		)
-	} else if *a.flags.FreeFormCmd.ValueString != "" {
-		a.baseLogger.Debug("freeform command found", "cmd", *a.flags.FreeFormCmd.ValueString)
-		a.ssmAdapter.WithFreeFormCommand(*a.flags.FreeFormCmd.ValueString)
-	} else if *a.flags.Mode.ValueString == "ansible" {
+	// init ssm commands
+	switch *a.flags.Mode.ValueString {
+	case "bash":
+		a.baseLogger.Debug("mode set to Bash")
+
+		if *a.flags.BashScriptLocation.ValueString != "" {
+			a.baseLogger.Debug("running Bash script", "script_location", *a.flags.BashScriptLocation.ValueString)
+			a.ssmAdapter.WithCommands(
+				a.localFSAdapter.
+					WithLogger(a.baseLogger).
+					ReadBashScript(*a.flags.BashScriptLocation.ValueString),
+			)
+
+			break
+		}
+
+		if *a.flags.FreeFormCmd.ValueString != "" {
+			a.baseLogger.Debug("freeform command found", "cmd", *a.flags.FreeFormCmd.ValueString)
+			a.ssmAdapter.WithFreeFormCommand(*a.flags.FreeFormCmd.ValueString)
+
+			break
+		}
+
+		a.baseLogger.Error("when Bash mode is selected, script location and/or freeform command can't be empty")
+
+	case "ansible":
 		a.baseLogger.Debug("mode set to Ansible")
 
 		// TODO: implement PlaybookURL and ExtraVars
@@ -98,7 +114,7 @@ func (a *Adapter) Init() ports.IApp {
 			ExtraVars:   "",
 			Check:       isDryRun,
 		})
-	} else {
+	default:
 		a.baseLogger.Error("could not find a command to execute, " +
 			"script location or cmd flag must be defined")
 		os.Exit(1)

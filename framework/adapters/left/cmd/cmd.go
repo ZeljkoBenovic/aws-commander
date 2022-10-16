@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"flag"
+	"os"
+	"strings"
+
 	"github.com/Trapesys/aws-commander/framework/adapters/types/cmd"
 	"github.com/Trapesys/aws-commander/framework/ports"
 	"github.com/hashicorp/go-hclog"
-	"os"
-	"strings"
 )
 
 type Adapter struct {

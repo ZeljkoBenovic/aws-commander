@@ -3,10 +3,11 @@ package localfs
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/Trapesys/aws-commander/framework/adapters/types/ssm"
 	"github.com/Trapesys/aws-commander/framework/ports"
 	"github.com/hashicorp/go-hclog"
-	"os"
 )
 
 type Adapter struct {
