@@ -23,7 +23,7 @@ type Adapter struct {
 	flags cmd.Flags
 }
 
-func (a Adapter) getAWSOptions() session.Options {
+func (a *Adapter) getAWSOptions() session.Options {
 	// use env vars if set
 	if os.Getenv("AWS_ACCESS_KEY_ID") != "" &&
 		os.Getenv("AWS_SECRET_ACCESS_KEY") != "" {
@@ -41,13 +41,25 @@ func (a Adapter) getAWSOptions() session.Options {
 		}
 	}
 
-	a.baseLogger.Info("reading aws credentials from", "profile", *a.flags.AwsProfile.ValueString)
 	// otherwise, use profile from aws credential file
+	awsProfile := os.Getenv("AWS_PROFILE")
+	if awsProfile == "" {
+		awsProfile = *a.flags.AwsProfile.ValueString
+	}
+
+	awsRegion := os.Getenv("AWS_REGION")
+	if awsRegion == "" {
+		awsRegion = *a.flags.AwsZone.ValueString
+	}
+
+	a.baseLogger.Info("reading aws credentials from", "profile", awsProfile, "region", awsRegion)
+
 	return session.Options{
 		Config: aws.Config{
-			Region: a.flags.AwsZone.ValueString,
+			Region: &awsRegion,
 		},
-		Profile: *a.flags.AwsProfile.ValueString,
+		Profile:           awsProfile,
+		SharedConfigState: session.SharedConfigEnable,
 	}
 }
 
@@ -143,7 +155,7 @@ func (a *Adapter) WithLogger(logger hclog.Logger) ports.IApp {
 	return a
 }
 
-func (a Adapter) RunCommand() error {
+func (a *Adapter) RunCommand() error {
 	cmdResult := a.ssmAdapter.RunCommand()
 	if *a.flags.OutputLocation.ValueString != "" {
 		if err := a.localFSAdapter.WriteRunCommandOutput(cmdResult, *a.flags.OutputLocation.ValueString); err != nil {
