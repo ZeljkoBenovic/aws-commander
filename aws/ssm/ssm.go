@@ -127,7 +127,12 @@ func (s ssm) readBashFileAndProvideCommands() ([]*string, error) {
 		return nil, err
 	}
 
+	s.log.Debug("Script content read", "content", string(fileBytes))
+
 	for _, cmdLine := range strings.Split(string(fileBytes), "\n") {
+		cmdLine := cmdLine // closure capture
+		s.log.Debug("Script line read", "line", cmdLine)
+
 		cmds = append(cmds, &cmdLine)
 	}
 
@@ -158,7 +163,11 @@ func displayResults(instanceId *string, data *assm.GetCommandInvocationOutput) {
 		buff.WriteString(*data.StandardErrorContent)
 	}
 
-	buff.WriteString("====================\n\n")
+	if *data.StandardOutputContent == "" && *data.StandardErrorContent == "" {
+		buff.WriteString("NO CONTENT TO SHOW\n")
+	}
+
+	buff.WriteString("====================\n")
 
 	fmt.Print(buff.String())
 }
