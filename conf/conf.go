@@ -21,6 +21,7 @@ type Config struct {
 	BashFile     string
 
 	AnsiblePlaybook string
+	AnsibleDryRun   bool
 
 	AWSProfile string
 	AWSRegion  string
@@ -56,6 +57,7 @@ func DefaultConfig() Config {
 		AWSInstanceTags:      "",
 		CommandResultMaxWait: 30,
 		CommandExecMaxWait:   300,
+		AnsibleDryRun:        false,
 	}
 }
 
@@ -71,6 +73,7 @@ func (c *Config) processFlags() {
 	flag.StringVar(&c.AWSInstanceTags, "tags", c.AWSInstanceTags, "comma delimited list of ec2 tags")
 	flag.IntVar(&c.CommandResultMaxWait, "max-wait", c.CommandResultMaxWait, "maximum wait time in seconds for command execution")
 	flag.Int64Var(&c.CommandExecMaxWait, "max-exec", c.CommandExecMaxWait, "maximum command execution time in seconds")
+	flag.BoolVar(&c.AnsibleDryRun, "dry-run", c.AnsibleDryRun, "run ansible in dry-run mode")
 	flag.Parse()
 }
 
