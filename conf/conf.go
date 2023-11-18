@@ -1,0 +1,92 @@
+package conf
+
+import (
+	"errors"
+	"flag"
+	"log"
+)
+
+var (
+	ErrNoBashCMDOrScriptProvided         = errors.New("bash cmd or script not provided")
+	ErrAnsiblePlaybookNotProvided        = errors.New("ansible playbook not provided")
+	ErrEC2TagsOrIDsNotSpecified          = errors.New("ec2 instance ids or tags not specified")
+	ErrEC2TagsAndIDsAreMutuallyExclusive = errors.New("ec2 instance ids and tags are mutually exclusive")
+)
+
+type Config struct {
+	LogLevel string
+	Mode     string
+
+	BashOneLiner string
+	BashFile     string
+
+	AnsiblePlaybook string
+
+	AWSProfile string
+	AWSRegion  string
+
+	AWSInstanceIDs  string
+	AWSInstanceTags string
+
+	CommandMaxWait int
+}
+
+func New() Config {
+	conf := DefaultConfig()
+
+	conf.processFlags()
+	if err := conf.validateFlags(); err != nil {
+		log.Fatalln(err)
+	}
+
+	return conf
+}
+
+func DefaultConfig() Config {
+	return Config{
+		LogLevel:        "info",
+		Mode:            "bash",
+		BashOneLiner:    "",
+		BashFile:        "",
+		AnsiblePlaybook: "",
+		AWSProfile:      "",
+		AWSRegion:       "",
+		AWSInstanceIDs:  "",
+		AWSInstanceTags: "",
+		CommandMaxWait:  30,
+	}
+}
+
+func (c *Config) processFlags() {
+	flag.StringVar(&c.LogLevel, "log-level", c.LogLevel, "log output level")
+	flag.StringVar(&c.Mode, "mode", c.Mode, "running mode")
+	flag.StringVar(&c.BashOneLiner, "cmd", c.BashOneLiner, "bash command to run")
+	flag.StringVar(&c.BashFile, "script", c.BashFile, "bash script to run")
+	flag.StringVar(&c.AnsiblePlaybook, "playbook", c.AnsiblePlaybook, "ansible playbook to run")
+	flag.StringVar(&c.AWSProfile, "profile", c.AWSProfile, "aws profile")
+	flag.StringVar(&c.AWSRegion, "region", c.AWSRegion, "aws region")
+	flag.StringVar(&c.AWSInstanceIDs, "ids", c.AWSInstanceIDs, "comma delimited list of aws ec2 ids")
+	flag.StringVar(&c.AWSInstanceTags, "tags", c.AWSInstanceTags, "comma delimited list of ec2 tags")
+	flag.IntVar(&c.CommandMaxWait, "max-wait", c.CommandMaxWait, "maximum wait time in seconds for command execution")
+	flag.Parse()
+}
+
+func (c *Config) validateFlags() error {
+	if c.Mode == "bash" && c.BashFile == "" && c.BashOneLiner == "" {
+		return ErrNoBashCMDOrScriptProvided
+	}
+
+	if c.Mode == "ansible" && c.AnsiblePlaybook == "" {
+		return ErrAnsiblePlaybookNotProvided
+	}
+
+	if c.AWSInstanceIDs == "" && c.AWSInstanceTags == "" {
+		return ErrEC2TagsOrIDsNotSpecified
+	}
+
+	if c.AWSInstanceTags != "" && c.AWSInstanceIDs != "" {
+		return ErrEC2TagsAndIDsAreMutuallyExclusive
+	}
+
+	return nil
+}
