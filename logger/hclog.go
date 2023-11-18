@@ -1,9 +1,10 @@
 package logger
 
 import (
+	"os"
+
 	"github.com/Trapesys/aws-commander/conf"
 	"github.com/hashicorp/go-hclog"
-	"os"
 )
 
 type hlog struct {
@@ -13,6 +14,7 @@ type hlog struct {
 func (h *hlog) Error(msg string, args ...interface{}) {
 	if len(args) == 0 {
 		h.log.Error(msg)
+
 		return
 	}
 
@@ -22,6 +24,7 @@ func (h *hlog) Error(msg string, args ...interface{}) {
 func (h *hlog) Warn(msg string, args ...interface{}) {
 	if len(args) == 0 {
 		h.log.Warn(msg)
+
 		return
 	}
 
@@ -31,6 +34,7 @@ func (h *hlog) Warn(msg string, args ...interface{}) {
 func (h *hlog) Info(msg string, args ...interface{}) {
 	if len(args) == 0 {
 		h.log.Info(msg)
+
 		return
 	}
 
@@ -40,6 +44,7 @@ func (h *hlog) Info(msg string, args ...interface{}) {
 func (h *hlog) Debug(msg string, args ...interface{}) {
 	if len(args) == 0 {
 		h.log.Debug(msg)
+
 		return
 	}
 
@@ -58,6 +63,7 @@ func (h *hlog) Fatalln(msg string, args ...interface{}) {
 
 func (h *hlog) Named(name string) Logger {
 	h.log = h.log.Named(name)
+
 	return h
 }
 

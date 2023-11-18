@@ -32,7 +32,7 @@ func New(log logger.Logger, conf conf.Config, session *session.Session) *ssm {
 }
 
 func (s ssm) provideInstanceIDs() []*string {
-	var instIDs []*string
+	var instIDs = make([]*string, 0)
 
 	ids := strings.Split(strings.TrimSpace(s.conf.AWSInstanceIDs), ",")
 	for _, i := range ids {
@@ -45,19 +45,43 @@ func (s ssm) provideInstanceIDs() []*string {
 	return instIDs
 }
 
-func (s ssm) waitForCmdExecutionComplete(cmdId *string, instId *string) error {
+func (s ssm) waitForCmdExecutionComplete(cmdID *string, instID *string) error {
 	return s.cl.WaitUntilCommandExecutedWithContext(aws.BackgroundContext(), &assm.GetCommandInvocationInput{
-		CommandId:  cmdId,
-		InstanceId: instId,
+		CommandId:  cmdID,
+		InstanceId: instID,
 	}, func(waiter *request.Waiter) {
 		waiter.Delay = request.ConstantWaiterDelay(time.Second * time.Duration(s.conf.CommandResultMaxWait))
 	})
 }
 
-func displayResults(instanceId *string, data *assm.GetCommandInvocationOutput) {
+func (s ssm) waitForCmdExecAndDisplayCmdOutput(command *assm.SendCommandOutput) {
+	var instIdsSuccess = make([]*string, 0)
+
+	for _, instID := range command.Command.InstanceIds {
+		if err := s.waitForCmdExecutionComplete(command.Command.CommandId, instID); err != nil {
+			s.log.Error("Error waiting for command execution", "err", err.Error(), "instance_id", *instID)
+		} else {
+			instIdsSuccess = append(instIdsSuccess, instID)
+		}
+	}
+
+	for _, id := range instIdsSuccess {
+		out, err := s.cl.GetCommandInvocation(&assm.GetCommandInvocationInput{
+			CommandId:  command.Command.CommandId,
+			InstanceId: id,
+		})
+		if err != nil {
+			s.log.Error("Could not get command output", "err", "instance_id", *id)
+		} else {
+			displayResults(id, out)
+		}
+	}
+}
+
+func displayResults(instanceID *string, data *assm.GetCommandInvocationOutput) {
 	buff := bytes.Buffer{}
 
-	buff.WriteString(fmt.Sprintf("==== INSTANCE ID - %s =====\n", *instanceId))
+	buff.WriteString(fmt.Sprintf("==== INSTANCE ID - %s =====\n", *instanceID))
 
 	if *data.StandardOutputContent != "" {
 		buff.WriteString("[COMMAND OUTPUT]\n")
@@ -73,7 +97,7 @@ func displayResults(instanceId *string, data *assm.GetCommandInvocationOutput) {
 		buff.WriteString("NO CONTENT TO SHOW\n")
 	}
 
-	buff.WriteString("====================\n")
+	buff.WriteString("====================\n\n")
 
 	fmt.Print(buff.String())
 }

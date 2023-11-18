@@ -1,9 +1,12 @@
 package ssm
 
 import (
+	"os"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	assm "github.com/aws/aws-sdk-go/service/ssm"
-	"os"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func (s ssm) RunAnsible() error {
@@ -20,30 +23,69 @@ func (s ssm) RunAnsible() error {
 		return err
 	}
 
-	s.log.Info("Command deployed successfully")
-	s.log.Info("Waiting for results")
+	s.log.Info("Ansible playbook deployed successfully")
+	s.log.Info("Waiting for results...")
+
+	s.waitForCmdExecAndDisplayCmdOutput(command)
+
 	return nil
 }
 
 func (s ssm) provideAnsibleCommands() map[string][]*string {
-	var resp = map[string][]*string{}
-	checkStr := "False"
+	var (
+		trueStr  = "True"
+		falseStr = "False"
+		resp     = map[string][]*string{}
+		check    = map[bool]*string{
+			true:  &trueStr,
+			false: &falseStr,
+		}
+	)
 
-	playbookStr, err := os.ReadFile(s.conf.AnsiblePlaybook)
-	if err != nil {
-		s.log.Fatalln("Could not read ansible playbook", "err", err.Error())
+	resp["check"] = []*string{check[s.conf.AnsibleDryRun]}
+
+	if s.conf.AnsiblePlaybook != "" {
+		playbookStr, err := os.ReadFile(s.conf.AnsiblePlaybook)
+		if err != nil {
+			s.log.Fatalln("Could not read ansible playbook", "err", err.Error())
+		}
+
+		playbook := string(playbookStr)
+
+		resp["playbook"] = []*string{&playbook}
 	}
-	playbook := string(playbookStr)
-	resp["playbook"] = []*string{&playbook}
 
-	if s.conf.AnsibleDryRun {
-		checkStr = "True"
+	if s.conf.AnsibleURL != "" {
+		resp["playbookurl"] = []*string{&s.conf.AnsibleURL}
 	}
-	resp["check"] = []*string{&checkStr}
 
-	// TODO: implement "ploybookurl" and "extravars"
-	resp["playbookurl"] = []*string{}
-	resp["extravars"] = []*string{}
+	if s.conf.AnsibleExtraVars != "" {
+		resp["extravars"] = []*string{s.processExtraVars()}
+	}
+
+	s.log.Debug("Ansible params", "prams", spew.Sdump(resp))
 
 	return resp
+}
+
+func (s ssm) processExtraVars() *string {
+	var (
+		trimmedVars   = make([]string, 0)
+		processedVars string
+	)
+
+	vars := strings.Split(strings.TrimSpace(s.conf.AnsibleExtraVars), ",")
+	for _, v := range vars {
+		trimmedVars = append(trimmedVars, strings.TrimSpace(v))
+	}
+
+	for _, tv := range trimmedVars {
+		processedVars += tv + " "
+	}
+
+	processedVars = processedVars[:len(processedVars)-1] // trim last space char
+
+	s.log.Debug("Processed extra vars", "vars", processedVars)
+
+	return &processedVars
 }

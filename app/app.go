@@ -1,11 +1,12 @@
 package app
 
 import (
+	"os"
+
 	"github.com/Trapesys/aws-commander/aws"
 	"github.com/Trapesys/aws-commander/conf"
 	"github.com/Trapesys/aws-commander/logger"
 	"go.uber.org/fx"
-	"os"
 )
 
 func Run() {

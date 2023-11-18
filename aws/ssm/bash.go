@@ -1,11 +1,12 @@
 package ssm
 
 import (
+	"os"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	assm "github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/davecgh/go-spew/spew"
-	"os"
-	"strings"
 )
 
 func (s ssm) RunBash() error {
@@ -22,30 +23,10 @@ func (s ssm) RunBash() error {
 		return err
 	}
 
-	s.log.Info("Command deployed successfully")
-	s.log.Info("Waiting for results")
+	s.log.Info("Bash command deployed successfully")
+	s.log.Info("Waiting for results...")
 
-	var instIdsSuccess = make([]*string, 0)
-
-	for _, instId := range command.Command.InstanceIds {
-		if werr := s.waitForCmdExecutionComplete(command.Command.CommandId, instId); werr != nil {
-			s.log.Error("Error waiting for command execution", "err", err.Error(), "instance_id", *instId)
-		} else {
-			instIdsSuccess = append(instIdsSuccess, instId)
-		}
-	}
-
-	for _, id := range instIdsSuccess {
-		out, err := s.cl.GetCommandInvocation(&assm.GetCommandInvocationInput{
-			CommandId:  command.Command.CommandId,
-			InstanceId: id,
-		})
-		if err != nil {
-			s.log.Error("Could not get command output", "err", "instance_id", *id)
-		} else {
-			displayResults(id, out)
-		}
-	}
+	s.waitForCmdExecAndDisplayCmdOutput(command)
 
 	return nil
 }
@@ -73,11 +54,12 @@ func (s ssm) provideBashCommands() map[string][]*string {
 	}
 
 	s.log.Debug("Parsed commands from bash script", "cmds", spew.Sdump(resp))
+
 	return resp
 }
 
 func (s ssm) readBashFileAndProvideCommands() ([]*string, error) {
-	var cmds []*string
+	var cmds = make([]*string, 0)
 
 	fileBytes, err := os.ReadFile(s.conf.BashFile)
 	if err != nil {
