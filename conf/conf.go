@@ -28,7 +28,8 @@ type Config struct {
 	AWSInstanceIDs  string
 	AWSInstanceTags string
 
-	CommandMaxWait int
+	CommandResultMaxWait int
+	CommandExecMaxWait   int64
 }
 
 func New() Config {
@@ -44,16 +45,17 @@ func New() Config {
 
 func DefaultConfig() Config {
 	return Config{
-		LogLevel:        "info",
-		Mode:            "bash",
-		BashOneLiner:    "",
-		BashFile:        "",
-		AnsiblePlaybook: "",
-		AWSProfile:      "",
-		AWSRegion:       "",
-		AWSInstanceIDs:  "",
-		AWSInstanceTags: "",
-		CommandMaxWait:  30,
+		LogLevel:             "info",
+		Mode:                 "bash",
+		BashOneLiner:         "",
+		BashFile:             "",
+		AnsiblePlaybook:      "",
+		AWSProfile:           "",
+		AWSRegion:            "",
+		AWSInstanceIDs:       "",
+		AWSInstanceTags:      "",
+		CommandResultMaxWait: 30,
+		CommandExecMaxWait:   300,
 	}
 }
 
@@ -67,7 +69,8 @@ func (c *Config) processFlags() {
 	flag.StringVar(&c.AWSRegion, "region", c.AWSRegion, "aws region")
 	flag.StringVar(&c.AWSInstanceIDs, "ids", c.AWSInstanceIDs, "comma delimited list of aws ec2 ids")
 	flag.StringVar(&c.AWSInstanceTags, "tags", c.AWSInstanceTags, "comma delimited list of ec2 tags")
-	flag.IntVar(&c.CommandMaxWait, "max-wait", c.CommandMaxWait, "maximum wait time in seconds for command execution")
+	flag.IntVar(&c.CommandResultMaxWait, "max-wait", c.CommandResultMaxWait, "maximum wait time in seconds for command execution")
+	flag.Int64Var(&c.CommandExecMaxWait, "max-exec", c.CommandExecMaxWait, "maximum command execution time in seconds")
 	flag.Parse()
 }
 

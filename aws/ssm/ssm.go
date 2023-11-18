@@ -31,7 +31,7 @@ func (s ssm) RunBash() error {
 		DocumentVersion: aws.String("$LATEST"),
 		InstanceIds:     s.provideInstanceIDs(),
 		Parameters:      s.provideBashCommands(),
-		TimeoutSeconds:  aws.Int64(300),
+		TimeoutSeconds:  &s.conf.CommandExecMaxWait,
 	})
 	if err != nil {
 		return err
@@ -151,7 +151,6 @@ func displayResults(instanceId *string, data *assm.GetCommandInvocationOutput) {
 	if *data.StandardOutputContent != "" {
 		buff.WriteString("[COMMAND OUTPUT]\n")
 		buff.WriteString(*data.StandardOutputContent)
-		buff.WriteString("\n")
 	}
 
 	if *data.StandardErrorContent != "" {
