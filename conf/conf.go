@@ -103,7 +103,7 @@ func (c *Config) processFlags() {
 	flag.Int64Var(&c.CommandExecMaxWait, "max-exec", c.CommandExecMaxWait,
 		"maximum command execution time in seconds",
 	)
-	flag.BoolVar(&c.AnsibleDryRun, "dry-run", c.AnsibleDryRun,
+	flag.BoolVar(&c.AnsibleDryRun, "dryrun", c.AnsibleDryRun,
 		"run ansible in dry-run mode",
 	)
 	flag.StringVar(&c.AnsibleExtraVars, "extra-vars", c.AnsibleExtraVars,
