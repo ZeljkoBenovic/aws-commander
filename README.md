@@ -7,8 +7,7 @@ Supported scripts:
 * Ansible playbook loaded from a local filesystem
 
 The command/script/playbook will run across all EC2 instances simultaneously.     
-EC2 instances, for now, can be selected only by their IDs. Support for selection by tags will be 
-added in future versions.
+EC2 instances can be targeted by instance IDs or tags.
 
 
 ## Prerequisites
@@ -27,6 +26,7 @@ AWS access must be authenticated via `aws cli`.
 * `profile` - AWS profile as defined in *aws credentials* file.
 * `region` - AWS region in which EC2 instances reside.
 * `ids` - instance IDs, separated by comma (`,`). This is a mandatory flag.
+* `tags` - instance tags. Tags are semicolon delimited key - multiple value pairs (example: `Name=bar,baz;Role=foo,faz`)
 * `max-wait` - maximum wait time in seconds to run the command Default: `30`
 * `max-exec` - maximum wait time in seconds to get command result Default: `300`
 
@@ -41,11 +41,17 @@ AWS access must be authenticated via `aws cli`.
 # AWS authentication
 aws sso login --profile test-account
 
-# oneliner
+# oneliner using instance ids
 aws-commander -instances i-0bf9c273c67f684a0,i-011c9b3e3607a63b5,i-0e53e37f7b34517f5,i-0f02ca10faf8f349e -cmd "cd /tmp && ls -lah" -aws-profile test-account
 
-# or bash script
+# or bash script using instance ids
 aws-commander -instances i-0bf9c273c67f684a0,i-011c9b3e3607a63b5,i-0e53e37f7b34517f5,i-0f02ca10faf8f349e -script ./script.sh -aws-profile test-account
+
+# or oneliner using tags
+aws-commander -tags "Name=Test,Test2,Test3;Role=test" -cmd "cd /tmp && ls -lah" -aws-profile test-account
+
+# or bash script using tags
+aws-commander -tags "Name=Test,Test2,Test3;Role=test" -script ./script.sh -aws-profile test-account
 ```
 
 ### Running Ansible Playbook
@@ -61,12 +67,15 @@ aws-commander -instances i-0bf9c273c67f684a0,i-011c9b3e3607a63b5,i-0e53e37f7b345
 # AWS authentication
 aws sso login
 
-# run local playbook
+# run local playbook using instance ids
 aws-commander -instances i-0bf9c273c67f684a0,i-011c9b3e3607a63b5,i-0e53e37f7b34517f5,i-0f02ca10faf8f349e -mode ansible -playbook scripts/init.yaml -extra-vars foo=bar,faz=baz
 
-# or from url
+# or from url using instance ids
 aws-commander -instances i-0bf9c273c67f684a0,i-011c9b3e3607a63b5,i-0e53e37f7b34517f5,i-0f02ca10faf8f349e -mode ansible -ansible-url https://example.com/init.yaml -extra-vars foo=bar,faz=baz
-```
 
-#### Missing features
-* Select EC2 instances using instance tags
+# run local playbook using tags
+aws-commander -tags "Name=Test,Test2,Test3;Role=test" -mode ansible -playbook scripts/init.yaml -extra-vars foo=bar,faz=baz
+
+# or from url using tags
+aws-commander -tags "Name=Test,Test2,Test3;Role=test" -mode ansible -ansible-url https://example.com/init.yaml -extra-vars foo=bar,faz=baz
+```

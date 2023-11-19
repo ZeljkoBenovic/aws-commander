@@ -16,6 +16,7 @@ func (s ssm) RunBash() error {
 		DocumentName:    aws.String("AWS-RunShellScript"),
 		DocumentVersion: aws.String("$LATEST"),
 		InstanceIds:     s.provideInstanceIDs(),
+		Targets:         s.provideTags(),
 		Parameters:      s.provideBashCommands(),
 		TimeoutSeconds:  &s.conf.CommandExecMaxWait,
 	})

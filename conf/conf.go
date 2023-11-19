@@ -95,7 +95,7 @@ func (c *Config) processFlags() {
 		"comma delimited list of aws ec2 ids",
 	)
 	flag.StringVar(&c.AWSInstanceTags, "tags", c.AWSInstanceTags,
-		"comma delimited list of ec2 tags",
+		"semi-column delimited list of ec2 tags (\"foo=bar,baz;faz=baz,bar\")",
 	)
 	flag.IntVar(&c.CommandResultMaxWait, "max-wait", c.CommandResultMaxWait,
 		"maximum wait time in seconds for command execution",

@@ -16,6 +16,7 @@ func (s ssm) RunAnsible() error {
 		DocumentName:    aws.String("AWS-RunAnsiblePlaybook"),
 		DocumentVersion: aws.String("$LATEST"),
 		InstanceIds:     s.provideInstanceIDs(),
+		Targets:         s.provideTags(),
 		Parameters:      s.provideAnsibleCommands(),
 		TimeoutSeconds:  &s.conf.CommandExecMaxWait,
 	})

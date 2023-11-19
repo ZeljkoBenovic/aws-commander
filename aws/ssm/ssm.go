@@ -31,7 +31,40 @@ func New(log logger.Logger, conf conf.Config, session *session.Session) *ssm {
 	}
 }
 
+func (s ssm) provideTags() []*assm.Target {
+	if s.conf.AWSInstanceTags == "" {
+		return nil
+	}
+
+	var resp = make([]*assm.Target, 0)
+
+	for _, rawTags := range strings.Split(s.conf.AWSInstanceTags, ";") {
+		tags := make([]*string, 0)
+
+		key := "tag:" + strings.TrimSpace(strings.Split(rawTags, "=")[0])
+		vals := strings.Split(strings.Split(rawTags, "=")[1], ",")
+
+		for _, v := range vals {
+			v := v
+			tags = append(tags, stringRef(strings.TrimSpace(v)))
+		}
+
+		resp = append(resp, &assm.Target{
+			Key:    &key,
+			Values: tags,
+		})
+	}
+
+	s.log.Debug("Provided tags", "tags", spew.Sdump(resp))
+
+	return resp
+}
+
 func (s ssm) provideInstanceIDs() []*string {
+	if s.conf.AWSInstanceIDs == "" {
+		return nil
+	}
+
 	var instIDs = make([]*string, 0)
 
 	ids := strings.Split(strings.TrimSpace(s.conf.AWSInstanceIDs), ",")
@@ -57,6 +90,8 @@ func (s ssm) waitForCmdExecutionComplete(cmdID *string, instID *string) error {
 func (s ssm) waitForCmdExecAndDisplayCmdOutput(command *assm.SendCommandOutput) {
 	var instIdsSuccess = make([]*string, 0)
 
+	s.log.Debug("Command", "command", spew.Sdump(command))
+	//TODO: get results when only tags are provided
 	for _, instID := range command.Command.InstanceIds {
 		if err := s.waitForCmdExecutionComplete(command.Command.CommandId, instID); err != nil {
 			s.log.Error("Error waiting for command execution", "err", err.Error(), "instance_id", *instID)
@@ -100,4 +135,10 @@ func displayResults(instanceID *string, data *assm.GetCommandInvocationOutput) {
 	buff.WriteString("====================\n\n")
 
 	fmt.Print(buff.String())
+}
+
+func stringRef(str string) *string {
+	s := str
+
+	return &s
 }
